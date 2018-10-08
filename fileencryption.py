@@ -1,16 +1,13 @@
 import os
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives import padding
-from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes, hmac
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.primitives.asymmetric import padding as rsapadding
+from cryptography.hazmat.primitives import serialization
 
-
-def main():
-    test_MyEncrypt_Decrypt()
-
-    print()
-
-    test_MyFileEncrypt_Decrypt()
+DEBUG_PRINT = False
 
 
 def test_MyEncrypt_Decrypt():
@@ -29,24 +26,6 @@ def test_MyEncrypt_Decrypt():
 
     print("result:", decryptedtext)
     print("Matches:", plaintext == decryptedtext)
-
-
-TEST_FILENAME = "data/filetoencrypt.txt"
-
-
-def test_MyFileEncrypt_Decrypt():
-    (ciphertext, iv, tag, enc_key, hmac_key, ext) = test_MyFileEncrypt()
-    test_MyFileDecrypt(iv, enc_key, hmac_key, tag, ext)
-
-
-def test_MyFileEncrypt():
-    print("Testing encryptfile(decryptfile(\"" + TEST_FILENAME + "\"))")
-    (ciphertext, iv, tag, enc_key, hmac_key, ext) = MyFileEncrypt(TEST_FILENAME)
-    return ciphertext, iv, tag, enc_key, hmac_key, ext
-
-
-def test_MyFileDecrypt(iv, enc_key, hmac_key, tag, ext):
-    MyFileDecrypt(TEST_FILENAME + ext, enc_key, hmac_key, iv, tag)
 
 
 def MyEncrypt(message, enc_key, hmac_key):
@@ -117,10 +96,9 @@ def MyDecrypt(ciphertext, enc_key, hmac_key, iv, tag):
 
 def MyFileEncrypt(filepath):
     """
-    Generates a 32 byte key. Reads the file at filepath, encrypts the contents, and writes them to (filepath + ".encrypted").
-    Can easily be modified to write the result to the original file if so desired.
+    Generates a 32 byte key. Reads the file at filepath, encrypts the contents, and returns them.
     :param filepath: 
-    :return: (ciphertext, IV, HMAC tag, encryption key, HMAC key, file extension of new file)
+    :return: (ciphertext, IV, HMAC tag, encryption key, HMAC key)
     """
 
     enc_key = os.urandom(32)
@@ -129,34 +107,168 @@ def MyFileEncrypt(filepath):
     print("key:", enc_key)
 
     with open(filepath, 'rb') as file:
-        # TODO The project description says that we must read the file as a string. That can cause potential problems when encrypting/decrypting raw bytes, depending on the encoding. Let's read it in binary mode unless told otherwise.
         contents = file.read()
 
         (tag, ciphertext, iv) = MyEncrypt(contents, enc_key, hmac_key)
 
-    with open(filepath + ".encrypted", 'wb') as file:
-        file.write(ciphertext)
-
-    return ciphertext, iv, tag, enc_key, hmac_key, ".encrypted"
+    return ciphertext, iv, tag, enc_key, hmac_key
 
 
-def MyFileDecrypt(filepath, enc_key, hmac_key, iv, tag):
+def MyFileDecrypt(filepath, ciphertext, enc_key, hmac_key, iv, tag):
     """
-    Reads the file at filepath, decrypts the contents, and writes them to (filepath + ".decrypted").
-    Can easily be modified to write the result to the original file if so desired.
+    Decrypts the ciphertext and writes the plaintext to a file at filepath. Also returns the plaintext.
     :param filepath: 
     :param enc_key: 
     :param hmac_key: 
     :param iv: 
     :param tag: 
     """
-    with open(filepath, 'rb') as file:
-        contents = file.read()
 
-        plaintext = MyDecrypt(contents, enc_key, hmac_key, iv, tag)
+    plaintext = MyDecrypt(ciphertext, enc_key, hmac_key, iv, tag)
 
-    with open(filepath + ".decrypted", 'wb') as file:
+    with open(filepath, 'wb') as file:
         file.write(plaintext)
 
+    return plaintext
 
-main()
+
+def GenerateRSAKey():
+    """
+    Generates a new RSA public and private keypair
+    :return: (private key, public key)
+    """
+    private_key = rsa.generate_private_key(
+        public_exponent=65537,
+        key_size=2048,
+        backend=default_backend()
+    )
+
+    public_key = private_key.public_key()
+
+    return private_key, public_key
+
+
+def WriteRSAPrivateKey(filepath, key):
+    """
+    Writes a given private RSA key to a PEM file
+    :param filepath: 
+    :param key: 
+    """
+    with open(filepath, "wb") as key_file:
+        key_file.write(key.private_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PrivateFormat.PKCS8,
+            encryption_algorithm=serialization.NoEncryption()
+        ))
+
+
+def WriteRSAPublicKey(filepath, key):
+    """
+    Writes a given public RSA key to a PEM file
+    :param filepath: 
+    :param key: 
+    """
+    with open(filepath, "wb") as key_file:
+        key_file.write(key.public_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PublicFormat.SubjectPublicKeyInfo,
+        ))
+
+
+def LoadRSAPrivateKey(filepath):
+    """
+    Reads a PEM file and loads the private key
+    :param filepath: 
+    :return: 
+    """
+    with open(filepath, "rb") as key_file:
+        private_key = serialization.load_pem_private_key(
+            key_file.read(),
+            password=None,
+            backend=default_backend()
+        )
+    return private_key
+
+
+def LoadRSAPublicKey(filepath):
+    """
+    Reads a PEM file and loads the public key
+    :param filepath: 
+    :return: 
+    """
+    with open(filepath, "rb") as key_file:
+        private_key = serialization.load_pem_public_key(
+            key_file.read(),
+            backend=default_backend()
+        )
+    return private_key
+
+
+def MyRSAEncrypt(filepath, RSA_publickey_filepath):
+    """
+    Reads the contents of a file and encrypts them.
+    An AES key is generated and encrypted with the given RSA public key. The encrypted key is returned.
+    :param filepath: 
+    :param RSA_publickey_filepath: 
+    :return: 
+    """
+
+    # Encrypt the contents of the file
+    (ciphertext, iv, tag, enc_key, hmac_key) = MyFileEncrypt(filepath)
+
+    if (DEBUG_PRINT):
+        print('(encrypt) enc_key (a):', enc_key)
+        print('(encrypt) hmackey (a):', hmac_key)
+
+    # Encrypt the AES keys (enc_key|hmac_key) using the RSA public keyfile
+    publickey = LoadRSAPublicKey(RSA_publickey_filepath)
+    encrypted_aes_keys = publickey.encrypt(
+        enc_key + hmac_key,
+
+        rsapadding.OAEP(
+            mgf=rsapadding.MGF1(algorithm=hashes.SHA256()),
+            algorithm=hashes.SHA256(),
+            label=None
+        )
+    )
+
+    return encrypted_aes_keys, ciphertext, iv, tag
+
+
+def MyRSADecrypt(filepath, encrypted_aes_keys, ciphertext, iv, tag, RSA_privatekey_filepath):
+    """
+    Decrypts the ciphertext using an encrypted AES key and RSA private key and writes the result to a file at filepath.
+    Also returns the plaintext
+    :param filepath: 
+    :param encrypted_aes_keys: 
+    :param ciphertext: 
+    :param iv: 
+    :param tag: 
+    :param RSA_privatekey_filepath: 
+    :return: 
+    """
+
+    # Decrypt the AES keys using the RSA private keyfile
+    privatekey = LoadRSAPrivateKey(RSA_privatekey_filepath)
+    keys = privatekey.decrypt(
+        encrypted_aes_keys,
+
+        rsapadding.OAEP(
+            mgf=rsapadding.MGF1(algorithm=hashes.SHA256()),
+            algorithm=hashes.SHA256(),
+            label=None
+        )
+    )
+
+    # Pull enc_key and hmac_key out
+    enc_key = keys[0:32]
+    hmac_key = keys[32:64]
+
+    if (DEBUG_PRINT):
+        print('(decrypt) enc_key (a):', enc_key)
+        print('(decrypt) hmackey (a):', hmac_key)
+
+    # Decrypt ciphertext and write it to the file
+    plaintext = MyFileDecrypt(filepath, ciphertext, enc_key, hmac_key, iv, tag)
+
+    return plaintext
