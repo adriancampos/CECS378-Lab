@@ -8,3 +8,8 @@ RSA_KEYSIZE = 2048  # RSA key size, in bits
 
 RSA_PUBLICKEY_FILEPATH = "./rsa_public.pem"
 RSA_PRIVATEKEY_FILEPATH = "./rsa_private.pem"
+
+ROOT_FOLDER = "./dangerzone"
+
+
+ENCRYPTED_EXTENSION = ".trad"

