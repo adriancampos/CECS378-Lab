@@ -1,4 +1,4 @@
-import os
+from os import urandom
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives import padding
 from cryptography.hazmat.primitives import hashes, hmac
@@ -6,14 +6,15 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives.asymmetric import padding as rsapadding
 from cryptography.hazmat.primitives import serialization
+import constants
 
 DEBUG_PRINT = False
 
 
 def test_MyEncrypt_Decrypt():
     print("Testing encrypt(decrypt(\"Hello World!\"))")
-    enc_key = os.urandom(32)
-    hmac_key = os.urandom(32)
+    enc_key = urandom(constants.AES_KEYSIZE)
+    hmac_key = urandom(constants.AES_KEYSIZE)
 
     plaintext = b"Hello World!"
 
@@ -50,7 +51,7 @@ def MyEncrypt(message, enc_key, hmac_key):
 
     # encrypt padded_message
     backend = default_backend()
-    iv = os.urandom(16)
+    iv = urandom(constants.AES_IVSIZE)
     cipher = Cipher(algorithms.AES(enc_key), modes.CBC(iv), backend=backend)
     encryptor = cipher.encryptor()
     ct = encryptor.update(padded_message) + encryptor.finalize()
@@ -101,8 +102,8 @@ def MyFileEncrypt(filepath):
     :return: (ciphertext, IV, HMAC tag, encryption key, HMAC key)
     """
 
-    enc_key = os.urandom(32)
-    hmac_key = os.urandom(32)
+    enc_key = urandom(constants.AES_KEYSIZE)
+    hmac_key = urandom(constants.AES_KEYSIZE)
 
     print("key:", enc_key)
 
@@ -138,8 +139,8 @@ def GenerateRSAKey():
     :return: (private key, public key)
     """
     private_key = rsa.generate_private_key(
-        public_exponent=65537,
-        key_size=2048,
+        public_exponent=constants.RSA_PUBLIC_EXPONENT,
+        key_size=constants.RSA_KEYSIZE,
         backend=default_backend()
     )
 
