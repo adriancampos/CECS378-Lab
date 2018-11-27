@@ -12,4 +12,4 @@ RSA_PRIVATEKEY_FILEPATH = "./rsa_private.pem"
 ROOT_FOLDER = "./dangerzone"
 
 
-ENCRYPTED_EXTENSION = ".trad"
+ENCRYPTED_EXTENSION = ".tradlock"
