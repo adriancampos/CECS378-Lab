@@ -10,6 +10,8 @@ File contents are encrypted with AES-256 in CBC mode and a randomly generated ke
 ### Try it out
 Grab the executables from the [releases](https://github.com/adriancampos/CECS378-Lab/releases/latest) page.
 
+Create a folder called dangerzone. Place some files in there. Please don't place anything important inside; it might not make it out.
+
 encrypt.exe generates a public/private keypair, encrypts files (recursively) within ./dangerzone.
 
 decrypt.exe reads the public/private keypair, decrypts files (recursively) within ./dangerzone.
