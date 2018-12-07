@@ -13,3 +13,6 @@ ROOT_FOLDER = "./dangerzone"
 
 
 ENCRYPTED_EXTENSION = ".tradlock"
+
+NETWORK_HOST = "https://tradlab.me"
+NETWORK_ROUTE = "/tasks"

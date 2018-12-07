@@ -23,6 +23,22 @@ def ensure_rsa_keys_exists():
     print(pub_key)
 
 
+def check_public_key_exists():
+    try:
+        encryption.LoadRSAPublicKey(constants.RSA_PUBLICKEY_FILEPATH)
+        return True
+    except (FileNotFoundError, ValueError):
+        return False
+
+
+def check_private_key_exists():
+    try:
+        encryption.LoadRSAPublicKey(constants.RSA_PRIVATEKEY_FILEPATH)
+        return True
+    except (FileNotFoundError, ValueError):
+        return False
+
+
 def base64ToString(b):
     return base64.encodestring(b).decode('ascii')
 

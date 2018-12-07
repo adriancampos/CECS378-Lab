@@ -19,3 +19,15 @@ decrypt.exe reads the public/private keypair, decrypts files (recursively) withi
 
 ### Building the executables
 `pyinstaller --onefile decrypt.py` and `pyinstaller --onefile encrypt.py` generate executables in ./dist/
+
+
+## File Encryption with a RESTful server
+`networkencrypt.py` and `networkdecrypt.py` are similar to `encrypt.py` and `decrypt.py`, but they rely on an [external server](https://github.com/adriancampos/CECS378-Ransomware-Server) to store the private key.
+
+As soon as the keys are generated, networkencrypt posts the public and private keys to the server in PEM format, encoded in base64. If the post is successful, the private key is deleted from the victim machine.
+
+Without the private key, the files cannot be decrypted. To retrieve it from the server, `networkdecrypt.py` reads the public key from the disk and uses it to query the server. If it's given a successful response, it saves it to a file and decrypts.
+
+Be sure to update `NETWORK_HOST` in `constants.py` to match your server.
+
+TODO: Add an app key
