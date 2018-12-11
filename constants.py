@@ -16,3 +16,4 @@ ENCRYPTED_EXTENSION = ".tradlock"
 
 NETWORK_HOST = "https://tradlab.me"
 NETWORK_ROUTE = "/keypairs"
+APP_KEY = "nhkYJUeKiux2ve3RcO1ObbNRJcAxnl0VSfGSIqk2VO70lU7N2iznXvkSw4TXsAFL"

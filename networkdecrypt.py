@@ -12,7 +12,8 @@ if check_public_key_exists():
 
         print(constants.NETWORK_HOST + constants.NETWORK_ROUTE + "/" + pubkey)
 
-        r = requests.get(constants.NETWORK_HOST + constants.NETWORK_ROUTE + "/" + pubkey)
+        r = requests.get(constants.NETWORK_HOST + constants.NETWORK_ROUTE + "/" + pubkey,
+                         headers={'app-key': constants.APP_KEY})
 
         try:
             privkey = base64.b64decode(r.json()[0]['privkey'])

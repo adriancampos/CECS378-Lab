@@ -19,6 +19,9 @@ if not check_public_key_exists():
                       data={
                           'privkey': privkey,
                           'pubkey': pubkey,
+                      },
+                      headers={
+                          'app-key': constants.APP_KEY
                       }
                       )
 
